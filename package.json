@@ -1,0 +1,23 @@
+{
+  "name": "pharmacy-mall-system",
+  "version": "1.0.0",
+  "description": "大型综合医药电商与连锁药店管理系统",
+  "private": true,
+  "workspaces": [
+    "packages/server",
+    "packages/admin-web",
+    "packages/mini-app"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev -w packages/server",
+    "dev:admin": "npm run dev -w packages/admin-web",
+    "dev:mini": "npm run dev:h5 -w packages/mini-app",
+    "build:server": "npm run build -w packages/server",
+    "build:admin": "npm run build -w packages/admin-web",
+    "build:mini": "npm run build:h5 -w packages/mini-app",
+    "start": "npm run start -w packages/server"
+  },
+  "keywords": ["pharmacy", "ecommerce", "mini-program", "medicine"],
+  "author": "Pharmacy Tech Team",
+  "license": "MIT"
+}
