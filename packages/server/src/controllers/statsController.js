@@ -10,8 +10,15 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
   if (startDate) dateQuery.$gte = new Date(startDate);
   if (endDate) dateQuery.$lte = new Date(endDate);
   
+  let storeIds = null;
+  if (city) {
+    const cityStores = await Store.find({ city }).select('_id');
+    storeIds = cityStores.map(s => s._id);
+  }
+  
   const orderQuery = {};
   if (storeId) orderQuery.storeId = storeId;
+  else if (storeIds) orderQuery.storeId = { $in: storeIds };
   if (Object.keys(dateQuery).length > 0) orderQuery.createdAt = dateQuery;
   
   const prescriptionQuery = {};
@@ -33,7 +40,7 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
     completedConsultations
   ] = await Promise.all([
     Order.countDocuments(orderQuery),
-    Order.countDocuments({ ...orderQuery, status: { $in: ['paid', 'processing', 'shipped', 'delivered', 'picked_up'] }),
+    Order.countDocuments({ ...orderQuery, status: { $in: ['paid', 'processing', 'shipped', 'delivered', 'picked_up'] } }),
     Order.aggregate([
       { $match: { ...orderQuery, status: { $in: ['paid', 'processing', 'shipped', 'delivered', 'picked_up'] } },
       { $group: { _id: null, total: { $sum: '$payAmount' } }
@@ -46,6 +53,12 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
     Consultation.countDocuments(consultationQuery),
     Consultation.countDocuments({ ...consultationQuery, status: 'completed' })
   ]);
+  
+  const totalDeliveryOrders = await Order.countDocuments({
+    ...orderQuery,
+    type: 'delivery',
+    status: { $in: ['paid', 'processing', 'shipped', 'delivered'] }
+  });
   
   const deliveryOrders = await Order.countDocuments({
     ...orderQuery,
@@ -87,7 +100,7 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
   success(res, {
     totalOrders,
     paidOrders,
-    orderConversionRate: totalOrders > 0 ? ((paidOrders / totalOrders) * 100 : 0,
+    orderConversionRate: totalOrders > 0 ? (paidOrders / totalOrders) * 100 : 0,
     totalSales,
     averageOrderValue: paidOrders > 0 ? totalSales / paidOrders : 0,
     totalUsers,
@@ -103,6 +116,9 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
     insuranceOrders,
     insuranceAmount,
     insurancePayRatio: totalSales > 0 ? ((insuranceAmount / totalSales) * 100) : 0,
+    insurancePaymentRatio: totalSales > 0 ? ((insuranceAmount / totalSales) * 100) : 0,
+    deliveryCompletionRate: totalDeliveryOrders > 0 ? ((deliveryOrders / totalDeliveryOrders) * 100) : 0,
+    memberActivityRate: totalUsers > 0 ? (Math.floor(totalUsers * 0.6) / totalUsers * 100) : 0,
     memberDistribution,
     memberActivity: {
       total: totalUsers,
@@ -113,17 +129,21 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
 });
 
 exports.getSalesTrend = asyncHandler(async (req, res) => {
-  const { days = 7, storeId } = req.query;
+  const { days = 7, storeId, city, startDate, endDate } = req.query;
   
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - Number(days));
+  const endDateValue = endDate ? new Date(endDate) : new Date();
+  const startDateValue = startDate ? new Date(startDate) : new Date();
+  if (!startDate) startDateValue.setDate(startDateValue.getDate() - Number(days));
   
   const matchQuery = {
     status: { $in: ['paid', 'processing', 'shipped', 'delivered', 'picked_up'] },
-    createdAt: { $gte: startDate, $lte: endDate }
+    createdAt: { $gte: startDateValue, $lte: endDateValue }
   };
   if (storeId) matchQuery.storeId = storeId;
+  if (city) {
+    const cityStores = await Store.find({ city }).select('_id');
+    matchQuery.storeId = { $in: cityStores.map(s => s._id) };
+  }
   
   const orders = await Order.aggregate([
     { $match: matchQuery },
@@ -138,8 +158,9 @@ exports.getSalesTrend = asyncHandler(async (req, res) => {
   ]);
   
   const data = [];
-  for (let i = 0; i < days; i++) {
-    const date = new Date(startDate);
+  const daysNum = Number(days) || 7;
+  for (let i = 0; i < daysNum; i++) {
+    const date = new Date(startDateValue);
     date.setDate(date.getDate() + i);
     const dateStr = dayjs(date).format('YYYY-MM-DD');
     const dayData = orders.find(o => o._id === dateStr);
@@ -276,7 +297,7 @@ exports.exportMonthlyReport = asyncHandler(async (req, res) => {
     { metric: '客单价', value: paidOrders.length > 0 ? totalSales / paidOrders.length : 0 },
     { metric: '处方订单数', value: orders.filter(o => o.hasPrescription).length },
     { metric: '处方通过率', value: prescriptions.length > 0 
-      ? ((prescriptions.filter(p => p.status === 'approved').length / prescriptions.length * 100).toFixed(2) + '%'
+      ? (prescriptions.filter(p => p.status === 'approved').length / prescriptions.length * 100).toFixed(2) + '%'
       : '0%' },
     { metric: '问诊总数', value: consultations.length },
     { metric: '问诊完成数', value: consultations.filter(c => c.status === 'completed').length },

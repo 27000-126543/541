@@ -1,23 +1,55 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { createContext, useContext } from 'react';
 import Taro from '@tarojs/taro';
+
+const safeGetStorage = (key) => {
+  try {
+    return Taro.getStorageSync(key) || null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const safeSetStorage = (key, value) => {
+  try {
+    Taro.setStorageSync(key, value);
+  } catch (e) {
+    console.warn('存储失败', e);
+  }
+};
+
+const safeRemoveStorage = (key) => {
+  try {
+    Taro.removeStorageSync(key);
+  } catch (e) {
+    console.warn('删除存储失败', e);
+  }
+};
+
+const safeShowToast = (options) => {
+  try {
+    Taro.showToast(options);
+  } catch (e) {
+    console.warn('showToast失败', e);
+  }
+};
 
 const AppContext = createContext(null);
 
 export const Provider = ({ children }) => {
-  const [userInfo, setUserInfo] = useState(Taro.getStorageSync('userInfo') || null);
-  const [cartList, setCartList] = useState(Taro.getStorageSync('cartList') || []);
-  const [currentStore, setCurrentStore] = useState(Taro.getStorageSync('currentStore') || null);
+  const [userInfo, setUserInfo] = useState(safeGetStorage('userInfo'));
+  const [cartList, setCartList] = useState(safeGetStorage('cartList') || []);
+  const [currentStore, setCurrentStore] = useState(safeGetStorage('currentStore'));
 
   const login = (token, user) => {
-    Taro.setStorageSync('token', token);
-    Taro.setStorageSync('userInfo', user);
+    safeSetStorage('token', token);
+    safeSetStorage('userInfo', user);
     setUserInfo(user);
   };
 
   const logout = () => {
-    Taro.removeStorageSync('token');
-    Taro.removeStorageSync('userInfo');
+    safeRemoveStorage('token');
+    safeRemoveStorage('userInfo');
     setUserInfo(null);
   };
 
@@ -38,9 +70,9 @@ export const Provider = ({ children }) => {
     }
     
     setCartList(newCart);
-    Taro.setStorageSync('cartList', newCart);
+    safeSetStorage('cartList', newCart);
     
-    Taro.showToast({
+    safeShowToast({
       title: '已加入购物车',
       icon: 'success'
     });
@@ -55,7 +87,7 @@ export const Provider = ({ children }) => {
     }).filter(item => item.quantity > 0);
     
     setCartList(newCart);
-    Taro.setStorageSync('cartList', newCart);
+    safeSetStorage('cartList', newCart);
   };
 
   const toggleCartItemSelect = (medicineId, storeId) => {
@@ -67,7 +99,7 @@ export const Provider = ({ children }) => {
     });
     
     setCartList(newCart);
-    Taro.setStorageSync('cartList', newCart);
+    safeSetStorage('cartList', newCart);
   };
 
   const toggleSelectAll = (storeId, selected) => {
@@ -79,7 +111,7 @@ export const Provider = ({ children }) => {
     });
     
     setCartList(newCart);
-    Taro.setStorageSync('cartList', newCart);
+    safeSetStorage('cartList', newCart);
   };
 
   const removeFromCart = (medicineId, storeId) => {
@@ -88,7 +120,7 @@ export const Provider = ({ children }) => {
     );
     
     setCartList(newCart);
-    Taro.setStorageSync('cartList', newCart);
+    safeSetStorage('cartList', newCart);
   };
 
   const clearSelectedCart = (storeId) => {
@@ -97,7 +129,7 @@ export const Provider = ({ children }) => {
     );
     
     setCartList(newCart);
-    Taro.setStorageSync('cartList', newCart);
+    safeSetStorage('cartList', newCart);
   };
 
   const getCartTotal = (storeId) => {
@@ -109,7 +141,7 @@ export const Provider = ({ children }) => {
 
   const setStore = (store) => {
     setCurrentStore(store);
-    Taro.setStorageSync('currentStore', store);
+    safeSetStorage('currentStore', store);
   };
 
   const value = {
@@ -139,7 +171,22 @@ export const Provider = ({ children }) => {
 export const useApp = () => {
   const context = useContext(AppContext);
   if (!context) {
-    throw new Error('useApp must be used within Provider');
+    return {
+      userInfo: null,
+      setUserInfo: () => {},
+      cartList: [],
+      currentStore: null,
+      login: () => {},
+      logout: () => {},
+      addToCart: () => {},
+      updateCartItem: () => {},
+      toggleCartItemSelect: () => {},
+      toggleSelectAll: () => {},
+      removeFromCart: () => {},
+      clearSelectedCart: () => {},
+      getCartTotal: () => ({ total: 0, count: 0, items: [] }),
+      setStore: () => {}
+    };
   }
   return context;
 };

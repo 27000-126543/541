@@ -10,26 +10,29 @@ const config = {
   sourceRoot: 'src',
   outputRoot: 'dist',
   plugins: [],
-  defineConstants: {
-  },
+  defineConstants: {},
   copy: {
-    patterns: [
-    ],
-    options: {
-    }
+    patterns: [],
+    options: {}
   },
   framework: 'react',
   compiler: 'webpack5',
   cache: {
     enable: false
   },
+  babel: {
+    presets: [
+      ['@babel/preset-env', {
+        modules: false
+      }],
+      ['@babel/preset-react', { runtime: 'automatic' }]
+    ]
+  },
   mini: {
     postcss: {
       pxtransform: {
         enable: true,
-        config: {
-
-        }
+        config: {}
       },
       url: {
         enable: true,
@@ -49,11 +52,26 @@ const config = {
   h5: {
     publicPath: '/',
     staticDirectory: 'static',
+    webpackChain(chain, webpack) {
+      chain.externals({
+        react: 'React',
+        'react-dom': 'ReactDOM'
+      })
+      const CopyWebpackPlugin = require('copy-webpack-plugin')
+      chain.plugin('copy-static').use(CopyWebpackPlugin, [{
+        patterns: [
+          {
+            from: 'src/static',
+            to: 'static',
+            noErrorOnMissing: true
+          }
+        ]
+      }])
+    },
     postcss: {
       autoprefixer: {
         enable: true,
-        config: {
-        }
+        config: {}
       },
       cssModules: {
         enable: false,
@@ -64,9 +82,7 @@ const config = {
       }
     },
     devServer: {
-      port: 10086,
-      hot: true,
-      historyApiFallback: true
+      port: 10086
     }
   }
 }

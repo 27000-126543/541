@@ -7,9 +7,13 @@ const BASE_URL = process.env.NODE_ENV === 'development'
 const request = (options) => {
   const { url, method = 'GET', data = {}, header = {} } = options;
   
-  const token = Taro.getStorageSync('token');
-  if (token) {
-    header['Authorization'] = `Bearer ${token}`;
+  try {
+    const token = Taro.getStorageSync('token');
+    if (token) {
+      header['Authorization'] = `Bearer ${token}`;
+    }
+  } catch (e) {
+    console.warn('读取token失败', e);
   }
   
   return new Promise((resolve, reject) => {
@@ -26,30 +30,26 @@ const request = (options) => {
           if (res.data.code === 0) {
             resolve(res.data);
           } else if (res.data.code === 401) {
-            Taro.removeStorageSync('token');
-            Taro.removeStorageSync('userInfo');
-            Taro.navigateTo({ url: '/pages/user/login' });
+            try {
+              Taro.removeStorageSync('token');
+              Taro.removeStorageSync('userInfo');
+            } catch (e) {}
             reject(res.data);
           } else {
-            Taro.showToast({
-              title: res.data.message || '请求失败',
-              icon: 'none'
-            });
+            try {
+              Taro.showToast({
+                title: res.data.message || '请求失败',
+                icon: 'none'
+              });
+            } catch (e) {}
             reject(res.data);
           }
         } else {
-          Taro.showToast({
-            title: '网络错误',
-            icon: 'none'
-          });
           reject(res);
         }
       },
       fail: (err) => {
-        Taro.showToast({
-          title: '网络连接失败',
-          icon: 'none'
-        });
+        console.warn('请求失败:', url, err);
         reject(err);
       }
     });

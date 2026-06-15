@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, Input, Swiper, SwiperItem } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useApp } from '../../store/context';
@@ -46,19 +46,19 @@ const Home = () => {
 
   const loadData = async () => {
     try {
-      const [hotRes, newRes, flashRes, keywordRes] = await Promise.all([
+      const results = await Promise.allSettled([
         getRecommendMedicines({ type: 'hot', limit: 10, storeId: currentStore?._id }),
         getRecommendMedicines({ type: 'new', limit: 6, storeId: currentStore?._id }),
         getFlashSaleList(),
         getHotKeywords()
       ]);
-
-      if (hotRes.code === 0) setHotMedicines(hotRes.data);
-      if (newRes.code === 0) setNewMedicines(newRes.data);
-      if (flashRes.code === 0) setFlashSales(flashRes.data);
-      if (keywordRes.code === 0) setHotKeywords(keywordRes.data);
+      const [hotRes, newRes, flashRes, keywordRes] = results;
+      if (hotRes.status === 'fulfilled' && hotRes.value?.code === 0) setHotMedicines(hotRes.value.data || []);
+      if (newRes.status === 'fulfilled' && newRes.value?.code === 0) setNewMedicines(newRes.value.data || []);
+      if (flashRes.status === 'fulfilled' && flashRes.value?.code === 0) setFlashSales(flashRes.value.data || []);
+      if (keywordRes.status === 'fulfilled' && keywordRes.value?.code === 0) setHotKeywords(keywordRes.value.data || []);
     } catch (e) {
-      console.error('加载数据失败', e);
+      console.warn('加载数据失败', e);
     }
   };
 

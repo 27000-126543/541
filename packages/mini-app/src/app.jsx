@@ -1,5 +1,8 @@
-import { Component } from 'react'
+import React, { Component } from 'react'
 import Taro from '@tarojs/taro'
+if (typeof window !== 'undefined') {
+  window.React = React
+}
 import { Provider } from './store/context'
 import './app.scss'
 

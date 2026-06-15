@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card, Form, Select, DatePicker, Button, Space, Table, Tag, message } from 'antd'
-import { ExportOutlined, FileExcelOutlined } from '@ant-design/icons'
-import { statsApi } from '../services/api'
+import { ExportOutlined, FileOutlined } from '@ant-design/icons'
+import { statsApi } from '../../services/api'
 import dayjs from 'dayjs'
 
 const { Option } = Select
@@ -98,7 +98,7 @@ const ReportExport = () => {
               ]}
             >
               <Card.Meta
-                avatar={<FileExcelOutlined style={{ fontSize: 32, color: '#52c41a' }} />}
+                avatar={<FileOutlined style={{ fontSize: 32, color: '#52c41a' }} />}
                 title={report.name}
                 description={report.description}
               />

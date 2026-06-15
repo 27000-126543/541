@@ -17,7 +17,18 @@
     "build:mini": "npm run build:h5 -w packages/mini-app",
     "start": "npm run start -w packages/server"
   },
-  "keywords": ["pharmacy", "ecommerce", "mini-program", "medicine"],
+  "keywords": [
+    "pharmacy",
+    "ecommerce",
+    "mini-program",
+    "medicine"
+  ],
   "author": "Pharmacy Tech Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
+    "@babel/preset-react": "^7.29.7",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2"
+  }
 }

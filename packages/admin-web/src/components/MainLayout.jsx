@@ -12,7 +12,7 @@ import {
   UserAddOutlined,
   MessageOutlined,
   BarChartOutlined,
-  FileExportOutlined,
+  ExportOutlined,
   SettingOutlined,
   LogoutOutlined,
   BulbOutlined,
@@ -102,7 +102,7 @@ const MainLayout = ({ children }) => {
       icon: <BarChartOutlined />,
       label: '数据报表',
       children: [
-        { key: '/report/export', label: '报表导出', icon: <FileExportOutlined /> },
+        { key: '/report/export', label: '报表导出', icon: <ExportOutlined /> },
         { key: '/report/prediction', label: '智能预测', icon: <BulbOutlined /> },
       ]
     },
